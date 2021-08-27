@@ -1,0 +1,76 @@
+{
+    "Workspaces": {
+        "Default": {
+            "Permissions": [
+                {
+                    "name": "PBIDevOps - Admins",
+                    "identifier": "d6644872-f075-464e-bd3d-a8d1608b66f8",
+                    "groupUserAccessRight": "Admin",
+                    "principalType": "Group"
+                }	
+                ,
+                {
+                    "name": "PBI DevOps-serviceprincipal",
+                    "identifier": "eff47a3c-29ae-43db-b9da-b93f64a19f14",
+                    "groupUserAccessRight": "Member",
+                    "principalType": "App"
+                }  
+            ]
+        },
+        "WS_Datasets": {
+            "WorkspaceName": "Demo - PBIDevOps (Shared) | Datasets",
+            "Permissions": [],
+            "DeployOptions":{
+                "KeepPermissions": "true"
+            }
+        }
+        ,
+        "WS_Reports_Sales": {
+            "WorkspaceName": "Demo - PBIDevOps (Shared) | Sales",
+            "Permissions": []
+        },
+        "WS_Reports_Marketing": {
+            "WorkspaceName": "Demo - PBIDevOps (Shared) | Marketing",
+            "Permissions": []
+        }
+    },
+    "DataSets": {
+        "WWI - Sales.pbix": [
+            {
+                "Workspace": "WS_Datasets"
+                ,
+                "Parameters": {
+                    "Server": "dvsdemos.database.windows.net"
+                    ,
+                    "DataBase": "WideWorldImportersDW-Standard"
+                    ,
+                    "SharepointFolder": "https://ruiromanooutlook.sharepoint.com/sites/Demo-PBIDevOps"
+                },
+                "DeployOptions": { "DeployPartitions": true }
+            }
+        ]           
+    },
+    "Reports": {       
+        "Customer.pbix": [
+            {
+                "Workspace": "WS_Reports_Marketing",
+                "DataSet": "WWI - Sales.pbix"
+            }
+        ]
+        ,
+        "Purchases.pbix": [
+            {
+                "Workspace": "WS_Reports_Sales",
+                "DataSet": "WWI - Sales.pbix"
+            }
+        ]
+        ,
+        "Sales.pbix": [
+            {
+                "Workspace": "WS_Reports_Sales",
+                "DataSet": "WWI - Sales.pbix"
+            }
+        ]
+    }
+
+}
