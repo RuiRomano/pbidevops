@@ -1,6 +1,7 @@
 {
     "Workspaces": {
-        "Default": {
+        "WS_DEV": {
+            "WorkspaceName": "Demo - PBIDevOps (Shared) | DEV",
             "Permissions": [
                 {
                     "name": "PBIDevOps - Admins",
@@ -15,15 +16,11 @@
                     "groupUserAccessRight": "Member",
                     "principalType": "App"
                 }  
-            ]
-        },
-        "WS_DEV": {
-            "WorkspaceName": "Demo - PBIDevOps (Shared) | DEV",
-            "Permissions": [],
+            ],
             "DeployOptions":{
                 "KeepPermissions": "true"
             }
-        }    
+        }
     },
     "DataSets": {
         "WWI - Sales.pbix": [
@@ -36,8 +33,7 @@
                     "DataBase": "WideWorldImportersDW-Standard-DEV"
                     ,
                     "SharepointFolder": "https://ruiromanooutlook.sharepoint.com/sites/Demo-PBIDevOps"
-                },
-                "DeployOptions": { "DeployPartitions": true }
+                }
             }
         ]           
     },

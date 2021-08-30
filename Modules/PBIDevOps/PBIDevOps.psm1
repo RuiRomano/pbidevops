@@ -478,21 +478,18 @@ function Publish-PBIReports
 
                     # Upload a temp report and update the report content of the target report
 
-                    # TODO - This is required because of a "bug" of IMport API that always duplicate the report if the dataset is different (may be solved in the future)
+                    # README - This is required because of a "bug" of IMport API that always duplicate the report if the dataset is different (may be solved in the future)
 
                     $tempReportName = "Temp_$([System.Guid]::NewGuid().ToString("N"))"
 
                     Write-Host "##[command] Uploadind as a temp report '$tempReportName'"
-
-                    #$importResult = Import-PBIFile -authToken $authToken -file $filePath -groupId $workspaceId -dataSetName $tempReportName -nameConflict Abort -Wait
+                   
                     $importResult = New-PowerBIReport -Path $filePath -WorkspaceId $workspaceId -Name $tempReportName -ConflictAction Abort
-
-                    #$tempReportId = $importResult.reports[0].id
+                    
                     $tempReportId = $importResult.Id
 
                     Write-Host "##[command] Updating report content"
-
-                    #$updateContentResult = Invoke-PBIRequest -authToken $authToken -method Post -resource "reports/$targetReportId/UpdateReportContent" -Body (@{
+                    
                     $updateContentResult = Invoke-PowerBIRestMethod -method Post -Url "groups/$workspaceId/reports/$targetReportId/UpdateReportContent" -Body (@{
                         sourceType = "ExistingReport"
                         sourceReport = @{
@@ -578,7 +575,7 @@ function Publish-PBIWorkspaces
 
     Write-Host "##[command]Getting Power BI Workspaces"
 
-    $pbiWorkspaces = Get-PowerBIWorkspace
+    $pbiWorkspaces = Get-PowerBIWorkspace -All
 
     $defaultWorkspaceMetadata = $environmentMetadata.Workspaces.Default
 

@@ -10,6 +10,6 @@ $reportsPath = "$currentPath\SampleProject\Reports"
 $configPath = "$currentPath\config-dev.json"
 $sharedDatasetsPath = "$currentPath\shareddatasets.json"
 
-#Connect-PowerBIServiceAccount
+Connect-PowerBIServiceAccount
 
 Set-PBIReportConnections -path $reportsPath -configPath $configPath -backupDir $backupdir -workingDir $workingDir -sharedDatasetsPath $sharedDatasetsPath

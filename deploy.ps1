@@ -8,13 +8,8 @@ $currentPath = (Split-Path $MyInvocation.MyCommand.Definition –Parent)
 Import-Module "$currentPath\Modules\PBIDevOps" -Force
 
 $configPath = "$currentPath\config-prd.json"
-$credentialsConfigPath = "$currentPath\config.credentials.json"
 
-$credentialsConfig = Get-Content $credentialsConfigPath | ConvertFrom-Json
-
-$credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $credentialsConfig.appId, ($credentialsConfig.appSecret | ConvertTo-SecureString -AsPlainText -Force)
-
-Connect-PowerBIServiceAccount -ServicePrincipal -Tenant $credentialsConfig.tenantId -Credential $credential
+Connect-PowerBIServiceAccount
 
 # Deploy Workspaces
 
