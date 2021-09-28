@@ -1,7 +1,7 @@
 {
     "Workspaces": {
         "WS_DEV": {
-            "WorkspaceName": "Demo - PBIDevOps (Shared) | DEV",
+            "WorkspaceName": "Demo - PBIDevOps {DEV}",
             "Permissions": [
                 {
                     "name": "PBIDevOps - Admins",
@@ -15,6 +15,13 @@
                     "identifier": "eff47a3c-29ae-43db-b9da-b93f64a19f14",
                     "groupUserAccessRight": "Member",
                     "principalType": "App"
+                }
+                ,
+                {
+                    "name": "Rui Romano",
+                    "identifier": "ruiromano@ruiromanooutlook.onmicrosoft.com",
+                    "groupUserAccessRight": "Admin",
+                    "principalType": "User"
                 }  
             ],
             "DeployOptions":{
@@ -41,7 +48,7 @@
         "Customer.pbix": [
             {
                 "Workspace": "WS_DEV",
-                "DataSet": "WWI - Sales.pbix"
+                "DataSet": "WWI - Sales.pbix"                
             }
         ]
         ,

@@ -329,7 +329,7 @@ function Publish-PBIDataSets
 
                     #$datasetReports | Remove-PBIReport -authToken $authToken
 
-                    Invoke-PowerBIRestMethod -Url "groups/$workspaceId/reports/$($datasetReports[0].id)" -Method Delete
+                    Invoke-PowerBIRestMethod -Url "groups/$workspaceId/reports/$($datasetReports[0].id)" -Method Delete | Out-Null
                 }
             }
 
@@ -343,7 +343,7 @@ function Publish-PBIDataSets
 
                     #Invoke-PBIRequest -authToken $authToken -resource "datasets/$($newDataSet.id)/Default.TakeOver" -groupId $workspaceId -method Post
 
-                    Invoke-PowerBIRestMethod -Url "groups/$workspaceId/datasets/$($newDataSet.id)/Default.TakeOver" -Method Post
+                    Invoke-PowerBIRestMethod -Url "groups/$workspaceId/datasets/$($newDataSet.id)/Default.TakeOver" -Method Post | Out-Null
 
                     Write-Host "##[debug]Setting DataSet parameters"
 
@@ -363,7 +363,7 @@ function Publish-PBIDataSets
 
                     $bodyStr = $bodyObj | ConvertTo-Json
 
-                    Invoke-PowerBIRestMethod -Url "groups/$workspaceId/datasets/$($newDataSet.id)/UpdateParameters" -Body $bodyStr -Method Post
+                    Invoke-PowerBIRestMethod -Url "groups/$workspaceId/datasets/$($newDataSet.id)/UpdateParameters" -Body $bodyStr -Method Post | Out-Null
                 }
             }
         
@@ -503,7 +503,7 @@ function Publish-PBIReports
                     Write-Host "##[command] Deleting temp report '$tempReportId'"
 
                     #Invoke-PBIRequest -authToken $authToken -method Delete -resource "reports/$tempReportId" -groupId $workspaceId  
-                    Invoke-PowerBIRestMethod -Method Delete -Url "groups/$workspaceId/reports/$tempReportId"
+                    Invoke-PowerBIRestMethod -Method Delete -Url "groups/$workspaceId/reports/$tempReportId" | Out-Null
                 }
         
                 if ($targetReportId)
@@ -511,7 +511,7 @@ function Publish-PBIReports
                     Write-Host "##[command] Rebinding to dataset '$targetDatasetId'"
 
                     #Invoke-PBIRequest -authToken $authToken -method Post -resource "reports/$targetReportId/Rebind" -Body "{datasetId: '$targetDatasetId'}" -groupId $workspaceId 
-                    Invoke-PowerBIRestMethod -Method Post -Url "groups/$workspaceId/reports/$targetReportId/Rebind" -Body "{datasetId: '$targetDatasetId'}"
+                    Invoke-PowerBIRestMethod -Method Post -Url "groups/$workspaceId/reports/$targetReportId/Rebind" -Body "{datasetId: '$targetDatasetId'}" | Out-Null
                 }        
             }
 
@@ -623,14 +623,17 @@ function Publish-PBIWorkspaces
        
         $workspaceUsers = Invoke-PowerBIRestMethod -Url "groups/$($workspace.id)/users" -Method Get | ConvertFrom-Json | Select -ExpandProperty value
 
-        if ($defaultWorkspaceMetadata -and $defaultWorkspaceMetadata.Permissions)
+        if (!$workspaceDeployOptions -or !$workspaceDeployOptions.IgnoreDefaultPermissions)
         {
-            $workspacePermissions += $defaultWorkspaceMetadata.Permissions
-        }
+            if ($defaultWorkspaceMetadata -and $defaultWorkspaceMetadata.Permissions)
+            {
+                $workspacePermissions += $defaultWorkspaceMetadata.Permissions
+            }
 
-        if ($defaultWorkspaceConfig -and $defaultWorkspaceConfig.Permissions)
-        {
-            $workspacePermissions += @($defaultWorkspaceConfig.Permissions)
+            if ($defaultWorkspaceConfig -and $defaultWorkspaceConfig.Permissions)
+            {
+                $workspacePermissions += @($defaultWorkspaceConfig.Permissions)
+            }
         }
 
         # remove duplicate identifiers
@@ -655,7 +658,7 @@ function Publish-PBIWorkspaces
             {
                 Write-Host "##[debug]Adding new permission for principal '$($configPermission.identifier)' | '$($configPermission.principalType)' | '$($configPermission.groupUserAccessRight)'"
                 
-                Invoke-PowerBIRestMethod -Url "groups/$($workspace.id)/users" -Method Post -Body $body
+                Invoke-PowerBIRestMethod -Url "groups/$($workspace.id)/users" -Method Post -Body $body | Out-Null
 
             }
             else
@@ -666,7 +669,7 @@ function Publish-PBIWorkspaces
 
                     #Invoke-PBIRequest -authToken $authToken -groupId $workspace.id -resource "users" -method Put -body $body
 
-                    Invoke-PowerBIRestMethod -Url "groups/$($workspace.id)/users" -Method Put -Body $body
+                    Invoke-PowerBIRestMethod -Url "groups/$($workspace.id)/users" -Method Put -Body $body | Out-Null
                 }
             }          
         }
@@ -674,22 +677,21 @@ function Publish-PBIWorkspaces
         # Clean all the permissions not existent on the config files: default & project
 
         if (!$workspaceDeployOptions -or !$workspaceDeployOptions.KeepPermissions)
-        {
-            Write-Host "##[debug]Cleaning permissions"
-
-            $workspacePermissionsToDelete = $workspaceUsers |? { 
+        {          
+            $workspacePermissionsToDelete = @($workspaceUsers |? { 
                 ($_.identifier -and $_.identifier -notin $workspacePermissions.identifier)
+            })
+
+            if ($workspacePermissionsToDelete.Count -ne 0)
+            {
+                Write-Host "##[debug]Cleaning permissions: $($workspacePermissionsToDelete.Count)"
             }
 
-            $workspacePermissionsToDelete |% {
-                
-                $permission = $_
+            foreach ($permission in $workspacePermissionsToDelete)
+            {                                            
+                Write-Host "##[debug]Deleting permission for principal '$($permission.identifier)'"               
 
-                Write-Host "##[debug]Deleting permission for principal '$($permission.identifier)'"
-
-                #Invoke-PBIRequest -authToken $authToken -groupId $workspace.id -resource "users/$($permission.identifier)" -method Delete
-
-                Invoke-PowerBIRestMethod -Url "groups/$($workspace.id)/users/$($permission.identifier)" -Method Delete
+                Invoke-PowerBIRestMethod -Url "groups/$($workspace.id)/users/$($permission.identifier)" -Method Delete | Out-Null
             }        
         }
 
@@ -722,7 +724,7 @@ function Publish-PBIWorkspaces
             if ([string]::IsNullOrEmpty($capacityId) -and ![string]::IsNullOrEmpty($capacityName))
             {
                 #$capacities = Invoke-PBIRequest -authToken $authToken -resource "capacities" -method Get
-                Invoke-PowerBIRestMethod -Url "capacities" -Method Get | ConvertFrom-Json | Select -ExpandProperty value
+                $capacities = Invoke-PowerBIRestMethod -Url "capacities" -Method Get | ConvertFrom-Json | Select -ExpandProperty value
 
                 $capacity = $capacities |? {$_.displayName -eq $capacityName} | select -First 1
 
@@ -745,7 +747,7 @@ function Publish-PBIWorkspaces
 
                 #Invoke-PBIRequest -authToken $authToken -groupId $workspace.id -resource "AssignToCapacity" -method Post -body "{'capacityId':'$capacityId'}"
 
-                Invoke-PowerBIRestMethod -Url "groups/AssignToCapacity" -Method Post -Body "{'capacityId':'$capacityId'}"
+                Invoke-PowerBIRestMethod -Url "groups/AssignToCapacity" -Method Post -Body "{'capacityId':'$capacityId'}" | Out-Null
             
             }
         }

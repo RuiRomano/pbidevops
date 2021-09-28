@@ -1,19 +1,34 @@
 {
     "Workspaces": {
         "WS_Datasets": {
-            "WorkspaceName": "Demo - PBIDevOps (Shared) | Datasets",
-            "Permissions": [],
+            "WorkspaceName": "Demo - PBIDevOps | Datasets",
+            "Permissions": [
+                {
+                    "name": "PBIDevOps - Admins",
+                    "identifier": "d6644872-f075-464e-bd3d-a8d1608b66f8",
+                    "groupUserAccessRight": "Admin",
+                    "principalType": "Group"
+                }
+                ,
+                {
+                    "name": "PBI DevOps-serviceprincipal",
+                    "identifier": "eff47a3c-29ae-43db-b9da-b93f64a19f14",
+                    "groupUserAccessRight": "Member",
+                    "principalType": "App"
+                }  
+            ],
             "DeployOptions":{
-                "KeepPermissions": "true"
+                "KeepPermissions": "true",
+                "IgnoreDefaultPermissions": "true"
             }
         }
         ,
         "WS_Reports_Sales": {
-            "WorkspaceName": "Demo - PBIDevOps (Shared) | Sales",
+            "WorkspaceName": "Demo - PBIDevOps | Sales",
             "Permissions": []
         },
         "WS_Reports_Marketing": {
-            "WorkspaceName": "Demo - PBIDevOps (Shared) | Marketing",
+            "WorkspaceName": "Demo - PBIDevOps | Marketing",
             "Permissions": []
         }
         ,
@@ -24,14 +39,13 @@
                     "identifier": "d6644872-f075-464e-bd3d-a8d1608b66f8",
                     "groupUserAccessRight": "Admin",
                     "principalType": "Group"
-                }	
-                ,
+                },
                 {
-                    "name": "PBI DevOps-serviceprincipal",
-                    "identifier": "eff47a3c-29ae-43db-b9da-b93f64a19f14",
-                    "groupUserAccessRight": "Member",
-                    "principalType": "App"
-                }  
+                    "name": "PBIDevOps - Readers",
+                    "identifier": "b84aacdb-c663-4109-ad23-4d8c8dbc5ee0",
+                    "groupUserAccessRight": "Viewer",
+                    "principalType": "Group"
+                }	                
             ]
         }
     },
