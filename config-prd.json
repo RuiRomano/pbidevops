@@ -85,6 +85,13 @@
                 "DataSet": "WWI - Sales.pbix"
             }
         ]
+        ,
+        "PaginatedReport.rdl": [
+            {
+                "Workspace": "WS_Reports_Sales",
+                "DataSet": "WWI - Sales.pbix"                
+            }
+        ]
     }
 
 }
