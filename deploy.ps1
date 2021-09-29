@@ -1,5 +1,7 @@
 ﻿#Requires -Modules @{ ModuleName="MicrosoftPowerBIMgmt"; ModuleVersion="1.2.1026" }
 
+# Install-Module MicrosoftPowerBIMgmt -MinimumVersion 1.2.1026
+
 $VerbosePreference = "SilentlyContinue"
 $ErrorActionPreference = "Stop"
 
@@ -26,4 +28,4 @@ Publish-PBIReports -configPath $configPath -path "$projectPath\Reports"
 
 # Deploy PaginatedReports
 
-Publish-PBIReports -configPath $configPath -path "$projectPath\PaginatedReports"
+# Publish-PBIReports -configPath $configPath -path "$projectPath\PaginatedReports"
