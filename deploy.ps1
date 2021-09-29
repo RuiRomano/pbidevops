@@ -23,7 +23,7 @@ Publish-PBIWorkspaces -configPath $configPath
 Publish-PBIDataSets -configPath $configPath -path "$projectPath\DataSets"
 
 # Deploy Reports
-
+# README - The live connected PBIX reports need to be binded to an existent Dataset on powerbi.com - Run tool.FixReportConnections.ps1 to fix the pbix connections
 Publish-PBIReports -configPath $configPath -path "$projectPath\Reports"
 
 # Deploy PaginatedReports
