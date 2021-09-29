@@ -4,8 +4,8 @@
             "WorkspaceName": "Demo - PBIDevOps | Datasets",
             "Permissions": [],
             "DeployOptions":{
-                "CleanPermissions": "false",
-                "IgnoreDefaultPermissions": "false"
+                "CleanPermissions": true,
+                "IgnoreDefaultPermissions": false
             }
         }
         ,
