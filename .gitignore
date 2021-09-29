@@ -5,3 +5,5 @@ config.credentials.json
 shareddatasets.json
 /config.credentials - DEMO.json
 /ReportWithInvalidDataset.pbix
+
+/config-*.json

@@ -739,7 +739,7 @@ function Publish-PBIWorkspaces
 
         # Clean all the permissions not existent on the config files: default & project
 
-        if (!$workspaceDeployOptions -or !$workspaceDeployOptions.KeepPermissions)
+        if ($workspaceDeployOptions -and $workspaceDeployOptions.CleanPermissions)
         {          
             $workspacePermissionsToDelete = @($workspaceUsers |? { 
                 ($_.identifier -and $_.identifier -notin $workspacePermissions.identifier)

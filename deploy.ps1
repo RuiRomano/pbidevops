@@ -7,7 +7,8 @@ $currentPath = (Split-Path $MyInvocation.MyCommand.Definition –Parent)
 
 Import-Module "$currentPath\Modules\PBIDevOps" -Force
 
-$configPath = "$currentPath\config-prd.json"
+$projectPath = "$currentPath\SampleProject"
+$configPath = "$currentPath\config.json"
 
 Connect-PowerBIServiceAccount
 
@@ -17,8 +18,12 @@ Publish-PBIWorkspaces -configPath $configPath
 
 # Deploy Datasets
 
-Publish-PBIDataSets -configPath $configPath -path "$currentPath\SampleProject\DataSets"
+Publish-PBIDataSets -configPath $configPath -path "$projectPath\DataSets"
 
 # Deploy Reports
 
-Publish-PBIReports -configPath $configPath -path "$currentPath\SampleProject\Reports"
+Publish-PBIReports -configPath $configPath -path "$projectPath\Reports"
+
+# Deploy PaginatedReports
+
+Publish-PBIReports -configPath $configPath -path "$projectPath\PaginatedReports"
