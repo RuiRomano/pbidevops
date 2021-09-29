@@ -42,7 +42,7 @@
                     "SharepointFolder": "https://ruiromanooutlook.sharepoint.com/sites/Demo-PBIDevOps"
                 }
             }
-        ]           
+        ]                
     },
     "Reports": {       
         "Customer.pbix": [
@@ -63,6 +63,13 @@
             {
                 "Workspace": "WS_DEV",
                 "DataSet": "WWI - Sales.pbix"
+            }
+        ]
+        ,
+        "PaginatedReport.rdl": [
+            {
+                "Workspace": "WS_DEV",
+                "DataSet": "WWI - Sales.pbix"                
             }
         ]
     }

@@ -172,9 +172,23 @@ function Get-ReportMetadata
 
         $item = $_
 
-        $reportName = [System.IO.Path]::GetFileNameWithoutExtension($filePath)
+        $reportName = $item.ReportName
+
+        if (!$reportName)
+        {
+            $reportName = [System.IO.Path]::GetFileNameWithoutExtension($filePath)            
+        }
 
         $item | Add-Member -NotePropertyName ReportName -NotePropertyValue $reportName -Force
+
+        $reportType = "PowerBI"
+
+        if ([System.IO.Path]::GetExtension($filePath) -ieq ".rdl")
+        {
+            $reportType = "PaginatedReport"            
+        }
+  
+        $item | Add-Member -NotePropertyName ReportType -NotePropertyValue $reportType -Force
 
         if ([string]::IsNullOrEmpty($item.WorkspaceId))
         {
@@ -401,7 +415,7 @@ function Publish-PBIReports
 
     Write-Host "##[debug]Parameters: $paramtersStr"
 
-    $reports = Get-ChildItem -File -Path "$path\*.pbix" -Recurse -ErrorAction SilentlyContinue
+    $reports = Get-ChildItem -File -Path $path -Include @("*.pbix", "*.rdl") -Recurse -ErrorAction SilentlyContinue
 
     if ($filter -and $filter.Count -gt 0)
     {
@@ -448,21 +462,28 @@ function Publish-PBIReports
                 }
 
                 $reportName = $_.ReportName
-        
-                Write-Host "##[command] Uploading report '$reportName' into workspace '$workspaceId' and binding to dataset '$targetDatasetId'"
 
-                #$targetReport = @(Get-PBIReport -authToken $authToken -groupId $workspaceId -name $reportName)
+                $reportType = $_.ReportType
+
+                $reportNameForUpload = $reportName
+
+                # PaginatedReport upload requires the 'datasetDisplayName' to end with "*.rdl"
+
+                if ($reportType -ieq "PaginatedReport")
+                {                    
+                    $reportNameForUpload += ".rdl" 
+                }            
+                  
+                Write-Host "##[command] Uploading report '$reportName' into workspace '$workspaceId' and binding to dataset '$targetDatasetId'"
 
                 $targetReport = @(Get-PowerBIReport -WorkspaceId $workspaceId -Name $reportName)
 
                 if ($targetReport.Count -eq 0)
                 {
                     Write-Host "##[command] Uploading new report to workspace '$workspaceId'"
-
-                    #$importResult = Import-PBIFile -authToken $authToken -file $filePath -groupId $workspaceId -dataSetName $reportName -nameConflict Abort -Wait
-                    $importResult = New-PowerBIReport -Path $filePath -WorkspaceId $workspaceId -Name $reportName -ConflictAction Abort
-
-                    #$targetReportId = $importResult.reports[0].id
+                    
+                    $importResult = New-PowerBIReport -Path $filePath -WorkspaceId $workspaceId -Name $reportNameForUpload -ConflictAction Abort 
+                    
                     $targetReportId = $importResult.Id
                 }
                 else
@@ -474,45 +495,87 @@ function Publish-PBIReports
 
                     Write-Host "##[command] Report already exists on workspace '$workspaceId', uploading to temp report & updatereportcontent"
 
-                    $targetReportId = $targetReport[0].id
+                    $targetReport = $targetReport[0]
 
-                    # Upload a temp report and update the report content of the target report
+                    $targetReportId = $targetReport.id
 
-                    # README - This is required because of a "bug" of IMport API that always duplicate the report if the dataset is different (may be solved in the future)
+                    if ($reportType -ieq "PaginatedReport")
+                    {
+                        Write-Host "##[command] Overwrite paginated report"
 
-                    $tempReportName = "Temp_$([System.Guid]::NewGuid().ToString("N"))"
+                        $importResult = New-PowerBIReport -Path $filePath -WorkspaceId $workspaceId -Name $reportNameForUpload -ConflictAction Overwrite 
+                    }
+                    else
+                    {
+                        # Upload a temp report and update the report content of the target report
 
-                    Write-Host "##[command] Uploadind as a temp report '$tempReportName'"
+                        # README - This is required because of a "bug" of IMport API that always duplicate the report if the dataset is different (may be solved in the future)
+
+                        $tempReportName = "Temp_$([System.Guid]::NewGuid().ToString("N"))"
+
+                        Write-Host "##[command] Uploadind as a temp report '$tempReportName'"
                    
-                    $importResult = New-PowerBIReport -Path $filePath -WorkspaceId $workspaceId -Name $tempReportName -ConflictAction Abort
+                        $importResult = New-PowerBIReport -Path $filePath -WorkspaceId $workspaceId -Name $tempReportName -ConflictAction Abort
                     
-                    $tempReportId = $importResult.Id
+                        $tempReportId = $importResult.Id
 
-                    Write-Host "##[command] Updating report content"
+                        Write-Host "##[command] Updating report content"
                     
-                    $updateContentResult = Invoke-PowerBIRestMethod -method Post -Url "groups/$workspaceId/reports/$targetReportId/UpdateReportContent" -Body (@{
-                        sourceType = "ExistingReport"
-                        sourceReport = @{
-                        sourceReportId = $tempReportId
-                        sourceWorkspaceId = $workspaceId
-                        }
-                    } | ConvertTo-Json)
+                        $updateContentResult = Invoke-PowerBIRestMethod -method Post -Url "groups/$workspaceId/reports/$targetReportId/UpdateReportContent" -Body (@{
+                            sourceType = "ExistingReport"
+                            sourceReport = @{
+                            sourceReportId = $tempReportId
+                            sourceWorkspaceId = $workspaceId
+                            }
+                        } | ConvertTo-Json)
                 
-                    # Delete the temp report
+                        # Delete the temp report
 
-                    Write-Host "##[command] Deleting temp report '$tempReportId'"
-
-                    #Invoke-PBIRequest -authToken $authToken -method Delete -resource "reports/$tempReportId" -groupId $workspaceId  
-                    Invoke-PowerBIRestMethod -Method Delete -Url "groups/$workspaceId/reports/$tempReportId" | Out-Null
+                        Write-Host "##[command] Deleting temp report '$tempReportId'"
+                         
+                        Invoke-PowerBIRestMethod -Method Delete -Url "groups/$workspaceId/reports/$tempReportId" | Out-Null
+                    }
                 }
-        
-                if ($targetReportId)
+                
+                if ($reportType -ieq "PaginatedReport")
                 {
-                    Write-Host "##[command] Rebinding to dataset '$targetDatasetId'"
+                    Write-Host "##[command] Rebinding Paginated Report to dataset '$targetDatasetId'"
 
-                    #Invoke-PBIRequest -authToken $authToken -method Post -resource "reports/$targetReportId/Rebind" -Body "{datasetId: '$targetDatasetId'}" -groupId $workspaceId 
-                    Invoke-PowerBIRestMethod -Method Post -Url "groups/$workspaceId/reports/$targetReportId/Rebind" -Body "{datasetId: '$targetDatasetId'}" | Out-Null
-                }        
+                    $paginatedReportDataSources = @(Invoke-PowerBIRestMethod -url "groups/$workspaceId/reports/$targetReportId/datasources" -Method Get | ConvertFrom-Json | Select -ExpandProperty value)
+
+                    foreach($datasource in $paginatedReportDataSources)
+                    {
+                        if ($datasource.datasourceType -eq "AnalysisServices" -and $datasource.connectionDetails.server -ilike "pbiazure://*")
+                        {   
+                            Write-Host "##[command] Changing RDL Datasource '$($datasource.name)'"
+                              
+                            $bodyObj = @{
+                                updateDetails=@(
+                                @{
+                                    "datasourceName" = $datasource.name
+                                    ;
+                                    "connectionDetails" = @{                                        "server" = $datasource.connectionDetails.server                                        ;                                        "database" = "sobe_wowvirtualserver-$targetDatasetId"                                    }
+                                }
+                                )
+                            }
+
+                            $bodyStr = $bodyObj | ConvertTo-Json -Depth 5
+
+                            Invoke-PowerBIRestMethod -url "groups/$workspaceId/reports/$targetReportId/Default.UpdateDatasources" -Method Post -Body $bodyStr    
+                        }
+
+                    }                    
+
+                }
+                else
+                {
+                    if ($targetReportId)
+                    {
+                        Write-Host "##[command] Rebinding to dataset '$targetDatasetId'"
+                        
+                        Invoke-PowerBIRestMethod -Method Post -Url "groups/$workspaceId/reports/$targetReportId/Rebind" -Body "{datasetId: '$targetDatasetId'}" | Out-Null
+                    }   
+                }     
             }
 
         }

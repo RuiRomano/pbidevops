@@ -11,8 +11,6 @@ $configPath = "$currentPath\config-prd.json"
 
 Connect-PowerBIServiceAccount
 
-return
-
 # Deploy Workspaces
 
 Publish-PBIWorkspaces -configPath $configPath
