@@ -51,6 +51,7 @@ function Get-WorkspaceMetadata
         if ($pbiWorkspace)
         {
             $metadata.Value | Add-Member -NotePropertyName WorkspaceId -NotePropertyValue $pbiWorkspace.id
+            $metadata.Value | Add-Member -NotePropertyName CapacityId -NotePropertyValue $pbiWorkspace.capacityId
         }
         else
         {
@@ -200,8 +201,6 @@ function Get-ReportMetadata
             }
             elseif (![string]::IsNullOrEmpty($item.WorkspaceName))
             {
-                #$pbiWorkspace = Get-PBIWorkspace -authToken $authToken -name $item.WorkspaceName
-
                 $pbiWorkspace = Get-PowerBIWorkspace -name $item.WorkspaceName
 
                 if (!$pbiWorkspace)
@@ -209,11 +208,12 @@ function Get-ReportMetadata
                     throw "Cannot find Power BI Workspace with name '$($item.WorkspaceName)'"
                 }
 
-                $workspaceId = $pbiWorkspace.id
-                
+                $workspaceId = $pbiWorkspace.id                
             }
 
             $item | Add-Member -NotePropertyName WorkspaceId -NotePropertyValue $workspaceId
+            
+            $item | Add-Member -NotePropertyName WorkspaceMetadata -NotePropertyValue $workspaceMetadata
         }
 
         if ([string]::IsNullOrEmpty($item.DataSetId))
@@ -409,6 +409,10 @@ function Publish-PBIReports
         $configPath = "$rootPath\config.json"
     }
 
+    $tempPath = Join-Path ([System.IO.Path]::GetTempPath()) "PublishPBIReports_$((New-Guid).ToString("N"))"
+    
+    New-Item -ItemType Directory -Path $tempPath -Force -ErrorAction SilentlyContinue | Out-Null
+
     Write-Host "##[debug] Publish-PBIReports"
 
     $paramtersStr = ($MyInvocation.MyCommand.Parameters.GetEnumerator() |% {$_.Key + "='$((Get-Variable -Name $_.Key -EA SilentlyContinue).Value)'"}) -join ";"
@@ -440,30 +444,31 @@ function Publish-PBIReports
 
         $filePath = $pbixFile.FullName
 
-        $reportMetadata = @(Get-ReportMetadata -environmentMetadata $environmentMetadata -filePath $filePath)
+        $reportsMetadata = @(Get-ReportMetadata -environmentMetadata $environmentMetadata -filePath $filePath)
 
-        if (!$reportMetadata)
+        if (!$reportsMetadata)
         {
             throw "Cannot find Report configuration '$filePath'"
         }
 
         try
         {
-
-            $reportMetadata |% {
-             
-                $workspaceId = $_.WorkspaceId
-
-                $targetDatasetId = $_.DataSetId
+            foreach($reportMetadata in $reportsMetadata)
+            {                        
+                $workspaceId = $reportMetadata.WorkspaceId
+                $targetDatasetId = $reportMetadata.DataSetId
+                $reportName = $reportMetadata.ReportName
+                $reportType = $reportMetadata.ReportType
 
                 if ([string]::IsNullOrEmpty($targetDatasetId))
                 {
                     throw "Cannot solve target dataset id, make sure its deployed"
+                }        
+
+                if ($reportType -ieq "PaginatedReport" -and $reportMetadata.WorkspaceMetadata.CapacityId -eq $null)
+                {
+                    throw "Cannot deploy Paginated Reports to Non Premium Workspaces"
                 }
-
-                $reportName = $_.ReportName
-
-                $reportType = $_.ReportType
 
                 $reportNameForUpload = $reportName
 
@@ -473,6 +478,39 @@ function Publish-PBIReports
                 {                    
                     $reportNameForUpload += ".rdl" 
                 }            
+
+                if ($reportType -ieq "PaginatedReport")
+                {
+                    Write-Host "##[command] Rebinding Paginated Report to dataset '$targetDatasetId' by changing the connectionstring on RDL file"
+                                        
+                    $rdlXml = [xml](Get-Content $filePath)
+
+                    foreach($rdlDatasource in $rdlXml.Report.DataSources.DataSource)
+                    {
+                        if ($rdlDatasource.ConnectionProperties.DataProvider -ieq "PBIDATASET")
+                        {                                         
+                            $connStringBuilder = New-Object System.Data.Common.DbConnectionStringBuilder
+                            #$connStringBuilder.ConnectionString = $rdlDatasource.ConnectionProperties.ConnectString
+                            $connStringBuilder.PSObject.Properties['ConnectionString'].Value = $rdlDatasource.ConnectionProperties.ConnectString
+
+                            $catalog = $connStringBuilder["Initial Catalog"]
+                           
+                            $newCatalog = "sobe_wowvirtualserver-$targetDatasetId"                            
+
+                            Write-Host "Rebinding datasource: '$($rdlDatasource.DataSourceID)' from '$catalog' to '$newCatalog'"
+
+                            $connStringBuilder["Initial Catalog"] = $newCatalog
+
+                            $rdlDatasource.ConnectionProperties.ConnectString = $connStringBuilder.ConnectionString
+                        }
+                    }
+
+                    $tempRDLFilePath = Join-Path $tempPath $pbixFile.Name
+                    
+                    $rdlXml.Save($tempRDLFilePath);
+                                        
+                    $filePath = $tempRDLFilePath
+                }
                   
                 Write-Host "##[command] Uploading report '$reportName' into workspace '$workspaceId' and binding to dataset '$targetDatasetId'"
 
@@ -539,33 +577,38 @@ function Publish-PBIReports
                 
                 if ($reportType -ieq "PaginatedReport")
                 {
-                    Write-Host "##[command] Rebinding Paginated Report to dataset '$targetDatasetId'"
+                    # Rebinding the RDL locally, this way works even when the local rdl is targeting an invalid datasetid
+                    
+                    # Write-Host "##[command] Rebinding Paginated Report to dataset '$targetDatasetId'"
 
-                    $paginatedReportDataSources = @(Invoke-PowerBIRestMethod -url "groups/$workspaceId/reports/$targetReportId/datasources" -Method Get | ConvertFrom-Json | Select -ExpandProperty value)
+                    # $paginatedReportDataSources = @(Invoke-PowerBIRestMethod -url "groups/$workspaceId/reports/$targetReportId/datasources" -Method Get | ConvertFrom-Json | Select -ExpandProperty value)
 
-                    foreach($datasource in $paginatedReportDataSources)
-                    {
-                        if ($datasource.datasourceType -eq "AnalysisServices" -and $datasource.connectionDetails.server -ilike "pbiazure://*")
-                        {   
-                            Write-Host "##[command] Changing RDL Datasource '$($datasource.name)'"
+                    # foreach($datasource in $paginatedReportDataSources)
+                    # {
+                    #     if ($datasource.datasourceType -eq "AnalysisServices" -and $datasource.connectionDetails.server -ilike "pbiazure://*")
+                    #     {   
+                    #         Write-Host "##[command] Changing RDL Datasource '$($datasource.name)'"
                               
-                            $bodyObj = @{
-                                updateDetails=@(
-                                @{
-                                    "datasourceName" = $datasource.name
-                                    ;
-                                    "connectionDetails" = @{                                        "server" = $datasource.connectionDetails.server                                        ;                                        "database" = "sobe_wowvirtualserver-$targetDatasetId"                                    }
-                                }
-                                )
-                            }
+                    #         $bodyObj = @{
+                    #             updateDetails=@(
+                    #             @{
+                    #                 "datasourceName" = $datasource.name
+                    #                 ;
+                    #                 "connectionDetails" = @{
+                    #                     "server" = $datasource.connectionDetails.server
+                    #                     ;
+                    #                     "database" = "sobe_wowvirtualserver-$targetDatasetId"
+                    #                 }
+                    #             }
+                    #             )
+                    #         }
 
-                            $bodyStr = $bodyObj | ConvertTo-Json -Depth 5
+                    #         $bodyStr = $bodyObj | ConvertTo-Json -Depth 5
 
-                            Invoke-PowerBIRestMethod -url "groups/$workspaceId/reports/$targetReportId/Default.UpdateDatasources" -Method Post -Body $bodyStr    
-                        }
+                    #         Invoke-PowerBIRestMethod -url "groups/$workspaceId/reports/$targetReportId/Default.UpdateDatasources" -Method Post -Body $bodyStr    
+                    #     }
 
-                    }                    
-
+                    # }                    
                 }
                 else
                 {

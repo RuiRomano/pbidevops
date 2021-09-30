@@ -12,20 +12,38 @@ Import-Module "$currentPath\Modules\PBIDevOps" -Force
 $projectPath = "$currentPath\SampleProject"
 $configPath = "$currentPath\config.json"
 
-Connect-PowerBIServiceAccount
+try {
+    
+    $token = try { Get-PowerBIAccessToken -AsString } catch {}
 
-# Deploy Workspaces
+    if (!$token)
+    {
+        Connect-PowerBIServiceAccount
+    }
 
-Publish-PBIWorkspaces -configPath $configPath
+    # Deploy Workspaces
 
-# Deploy Datasets
+    Publish-PBIWorkspaces -configPath $configPath
 
-Publish-PBIDataSets -configPath $configPath -path "$projectPath\DataSets"
+    # Deploy Datasets
 
-# Deploy Reports
-# README - The live connected PBIX reports need to be binded to an existent Dataset on powerbi.com - Run tool.FixReportConnections.ps1 to fix the pbix connections
-Publish-PBIReports -configPath $configPath -path "$projectPath\Reports"
+    Publish-PBIDataSets -configPath $configPath -path "$projectPath\DataSets"
 
-# Deploy PaginatedReports
+    # Deploy Reports
+    # README - The live connected PBIX reports need to be binded to an existent Dataset on powerbi.com - Run tool.FixReportConnections.ps1 to fix the pbix connections
+    Publish-PBIReports -configPath $configPath -path "$projectPath\Reports"
 
-# Publish-PBIReports -configPath $configPath -path "$projectPath\PaginatedReports"
+    # Deploy PaginatedReports (Requires Premium Workspace)
+
+    Publish-PBIReports -configPath $configPath -path "$projectPath\PaginatedReports"
+}
+catch {
+    $exception = $_.Exception
+
+    if ($exception.Response)
+    {
+        Write-Error "PBI API Error Details: '$($exception.Response.Content)'" -Exception $exception
+    }
+
+    throw
+}
