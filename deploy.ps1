@@ -26,7 +26,6 @@ Import-Module "$currentPath\Modules\PBIDevOps" -Force
 
 Connect-PowerBIServiceAccount
 
-
 if ($workspaces)
 {
     Publish-PBIWorkspaces -configPath $configPath
@@ -36,8 +35,6 @@ if ($datasets)
 {
     Publish-PBIDataSets -configPath $configPath -path "$path\DataSets"
 }
-
-# Deploy Reports
 
 if ($reports)
 {
