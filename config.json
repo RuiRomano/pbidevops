@@ -4,7 +4,7 @@
             "WorkspaceName": "Demo - PBIDevOps | Datasets",
             "Permissions": [],
             "DeployOptions":{
-                "CleanPermissions": true,
+                "CleanPermissions": false,
                 "IgnoreDefaultPermissions": false
             }
         }
@@ -28,11 +28,9 @@
                 "Workspace": "WS_Datasets"
                 ,
                 "Parameters": {
-                    "Server": "dvsdemos.database.windows.net"
+                    "Server": "rrplaygroundsql.database.windows.net"
                     ,
                     "DataBase": "WideWorldImportersDW-Standard"
-                    ,
-                    "SharepointFolder": "https://ruiromanooutlook.sharepoint.com/sites/Demo-PBIDevOps"
                 }
             }
         ]           

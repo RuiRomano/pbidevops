@@ -1,5 +1,20 @@
 ﻿#Requires -Modules @{ ModuleName="MicrosoftPowerBIMgmt"; ModuleVersion="1.2.1026" }
 
+param(
+    [string]$path = ".\SampleProject"
+    ,
+    [string]$configPath = ".\config.json"
+    ,
+    [bool]$workspaces = $true
+    ,
+    [bool]$datasets = $true
+    ,
+    [bool]$reports = $true
+    ,
+    [bool]$paginatedReports = $false
+)
+
+
 # Install-Module MicrosoftPowerBIMgmt -MinimumVersion 1.2.1026
 
 $VerbosePreference = "SilentlyContinue"
@@ -9,23 +24,33 @@ $currentPath = (Split-Path $MyInvocation.MyCommand.Definition –Parent)
 
 Import-Module "$currentPath\Modules\PBIDevOps" -Force
 
-$projectPath = "$currentPath\SampleProject"
-$configPath = "$currentPath\config.json"
-
 Connect-PowerBIServiceAccount
 
 # Deploy Workspaces
 
-Publish-PBIWorkspaces -configPath $configPath
+if ($workspaces)
+{
+    Publish-PBIWorkspaces -configPath $configPath
+}
 
 # Deploy Datasets
 
-Publish-PBIDataSets -configPath $configPath -path "$projectPath\DataSets"
+if ($datasets)
+{
+    Publish-PBIDataSets -configPath $configPath -path "$path\DataSets"
+}
 
 # Deploy Reports
-# README - The live connected PBIX reports need to be binded to an existent Dataset on powerbi.com - Run tool.FixReportConnections.ps1 to fix the pbix connections
-Publish-PBIReports -configPath $configPath -path "$projectPath\Reports"
+
+if ($reports)
+{
+    # README - The live connected PBIX reports need to be binded to an existent Dataset on powerbi.com - Run tool.FixReportConnections.ps1 to fix the pbix connections
+    Publish-PBIReports -configPath $configPath -path "$path\Reports"
+}
 
 # Deploy PaginatedReports
 
-# Publish-PBIReports -configPath $configPath -path "$projectPath\PaginatedReports"
+if ($paginatedReports)
+{
+    Publish-PBIReports -configPath $configPath -path "$path\PaginatedReports"
+}
