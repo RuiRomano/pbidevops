@@ -26,14 +26,11 @@ Import-Module "$currentPath\Modules\PBIDevOps" -Force
 
 Connect-PowerBIServiceAccount
 
-# Deploy Workspaces
 
 if ($workspaces)
 {
     Publish-PBIWorkspaces -configPath $configPath
-}
-
-# Deploy Datasets
+}    
 
 if ($datasets)
 {
@@ -48,9 +45,7 @@ if ($reports)
     Publish-PBIReports -configPath $configPath -path "$path\Reports"
 }
 
-# Deploy PaginatedReports
-
 if ($paginatedReports)
-{
+{    
     Publish-PBIReports -configPath $configPath -path "$path\PaginatedReports"
 }
