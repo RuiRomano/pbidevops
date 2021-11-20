@@ -1,0 +1,55 @@
+{
+    "Workspaces": {
+        "WS_DEV": {
+            "WorkspaceName": "Demo - PBIDevOps {DEV}",
+            "Permissions": [],
+            "DeployOptions":{
+                "CleanPermissions": false,
+                "IgnoreDefaultPermissions": false
+            }
+        }
+    },
+    "DataSets": {
+        "WWI - Sales.pbix": [
+            {
+                "Workspace": "WS_DEV"
+                ,
+                "Parameters": {
+                    "Server": "rrplaygroundsql.database.windows.net"
+                    ,
+                    "DataBase": "WideWorldImportersDW-Standard"
+                }
+            }
+        ]           
+    },
+    "Reports": {       
+        "Customer.pbix": [
+            {
+                "Workspace": "WS_DEV",
+                "DataSet": "WWI - Sales.pbix"
+            }
+        ]
+        ,
+        "Purchases.pbix": [
+            {
+                "Workspace": "WS_DEV",
+                "DataSet": "WWI - Sales.pbix"
+            }
+        ]
+        ,
+        "Sales.pbix": [
+            {
+                "Workspace": "WS_DEV",
+                "DataSet": "WWI - Sales.pbix"
+            }
+        ]
+        ,
+        "PaginatedReport.rdl": [
+            {
+                "Workspace": "WS_DEV",
+                "DataSet": "WWI - Sales.pbix"                
+            }
+        ]
+    }
+
+}

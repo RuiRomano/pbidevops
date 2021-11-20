@@ -4,7 +4,7 @@ $currentPath = (Split-Path $MyInvocation.MyCommand.Definition -Parent)
 
 Import-Module "$currentPath\modules\PBIDevOps" -Force
 
-$configPath = "$currentPath\config.json"
+$configPath = "$currentPath\config-dev.json"
 $reportsPath = "$currentPath\SampleProject\Reports"
 $workingDir = "$currentPath\_temp\fixconnections"
 $backupdir = "$currentPath\_temp\fixconnections\bkup"
