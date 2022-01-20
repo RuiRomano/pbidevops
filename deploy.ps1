@@ -3,7 +3,7 @@
 param(
     [string]$path = ".\SampleProject"
     ,
-    [string]$configPath = ".\config.json"
+    [string]$configPath = ".\config-prd.json"
     ,
     [bool]$workspaces = $true
     ,

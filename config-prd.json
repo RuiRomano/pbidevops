@@ -1,7 +1,7 @@
 {
     "Workspaces": {
         "WS_Datasets": {
-            "WorkspaceName": "Demo - PBIDevOps | Datasets",
+            "WorkspaceName": "UKUG-Demo - PBIDevOps | Datasets",
             "Permissions": [],
             "DeployOptions":{
                 "CleanPermissions": false,
@@ -10,11 +10,11 @@
         }
         ,
         "WS_Reports_Sales": {
-            "WorkspaceName": "Demo - PBIDevOps | Sales",
+            "WorkspaceName": "UKUG-Demo - PBIDevOps | Sales",
             "Permissions": []
         },
         "WS_Reports_Marketing": {
-            "WorkspaceName": "Demo - PBIDevOps | Marketing",
+            "WorkspaceName": "UKUG-Demo - PBIDevOps | Marketing",
             "Permissions": []
         }
         ,
@@ -30,7 +30,7 @@
                 "Parameters": {
                     "Server": "rrplaygroundsql.database.windows.net"
                     ,
-                    "DataBase": "WideWorldImportersDW-Standard"
+                    "DataBase": "WideWorldImportersDW-Standard-PRD"
                 }
             }
         ]           
