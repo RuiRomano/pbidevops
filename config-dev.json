@@ -17,7 +17,7 @@
                 "Parameters": {
                     "Server": "rrplaygroundsql.database.windows.net"
                     ,
-                    "DataBase": "WideWorldImportersDW-Standard"
+                    "DataBase": "WideWorldImportersDW-Standard-DEV"
                 }
             }
         ]           
