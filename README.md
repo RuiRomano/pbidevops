@@ -7,7 +7,7 @@ Install-Module -Name MicrosoftPowerBIMgmt -RequiredVersion 1.2.1026
 
 Setup a folder with the Datasets & Reports
 
-Change the [Config File](./config.json) with your deployment scenario
+Change the [Config File](./config-prd.json) with your deployment scenario
 
 Run the [Deploy](./deploy.ps1) powershell script:
 
